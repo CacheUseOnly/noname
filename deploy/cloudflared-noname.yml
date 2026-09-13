@@ -1,0 +1,16 @@
+# 系统服务版配置 -> /etc/cloudflared/noname.yml（由 cloudflared-noname.service 加载）
+tunnel: noname
+credentials-file: /etc/cloudflared/cbc4c68d-83ba-44b2-a150-accc16bc0be6.json
+
+ingress:
+  # 联机大厅（WebSocket 中继）。cloudflared 会自动处理 Upgrade，service 写 http:// 即可
+  - hostname: noname.cacheuseonly.fun
+    path: ^/ws$
+    service: http://127.0.0.1:8082
+
+  # 网页端本体。必须挂在域名根目录：
+  # entry.ts / vite-plugin-importmap.ts 里写死了 /preload.js、/noname/entry.js、/jit-test.ts
+  - hostname: noname.cacheuseonly.fun
+    service: http://127.0.0.1:8089
+
+  - service: http_status:404

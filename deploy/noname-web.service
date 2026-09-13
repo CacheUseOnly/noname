@@ -1,0 +1,30 @@
+[Unit]
+Description=noname web client (static dist, read-only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=cacheubuntu
+WorkingDirectory=/home/cacheubuntu/Documents/noname
+# --readonly 关掉 /writeFile /removeFile /removeDir /createDir 四个无鉴权写接口
+# -s 阻止它在 Linux 上去执行 Windows 的 `start` 命令
+# 注意：@noname/fs 用 minimist(boolean:true) 解析，参数必须写成 --key=value
+ExecStart=/home/cacheubuntu/.nvm/versions/node/v24.21.0/bin/node \
+    packages/fs/dist/entry.cjs \
+    --dirname=/home/cacheubuntu/Documents/noname/dist \
+    --readonly -s
+Restart=always
+RestartSec=3
+
+# 最低限度加固：进程不需要写任何磁盘
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

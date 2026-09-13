@@ -1,0 +1,17 @@
+# 独立的第二个隧道实例，不影响已有的 cloudflared.service（token 模式远程托管隧道）
+# 注意 --config 指向 /etc/cloudflared/noname.yml 而非默认的 config.yml，
+# 避免被已有的 token 模式服务当成默认配置读进去
+[Unit]
+Description=cloudflared tunnel (noname)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+TimeoutStartSec=15
+Type=notify
+ExecStart=/usr/local/bin/cloudflared --no-autoupdate --config /etc/cloudflared/noname.yml tunnel run noname
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
