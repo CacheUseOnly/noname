@@ -39,6 +39,7 @@ interface EventItem {
 
 export function createServer(options: ServerOptions = {}): ServerInstance {
 	const port = options.port ?? 8082;
+	const host = options.host;
 
 	const clients = new Map<string, Client>();
 	const rooms = new Map<string, Room>();
@@ -390,7 +391,7 @@ export function createServer(options: ServerOptions = {}): ServerInstance {
 			if (wss) return Promise.resolve();
 
 			return new Promise<void>((resolve, reject) => {
-				const server = new WebSocketServer({ port });
+				const server = new WebSocketServer(host ? { port, host } : { port });
 
 				const handleError = (error: Error) => {
 					server.off("listening", handleListening);

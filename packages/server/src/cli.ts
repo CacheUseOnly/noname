@@ -14,8 +14,20 @@ function readPort(): number {
 	return port;
 }
 
+function readHost(): string | undefined {
+	const hostArgIndex = process.argv.findIndex(arg => arg === "--host" || arg === "-h");
+	const rawHost = hostArgIndex === -1 ? process.env.HOST : process.argv[hostArgIndex + 1];
+
+	if (rawHost === undefined || rawHost === "") {
+		return undefined;
+	}
+
+	return rawHost;
+}
+
 const port = readPort();
-const server = createServer({ port });
+const host = readHost();
+const server = createServer({ port, host });
 
 const stop = async () => {
 	await server.stop();
@@ -27,7 +39,7 @@ process.on("SIGTERM", stop);
 
 async function main() {
 	await server.start();
-	console.log(`Server listening on port ${port}`);
+	console.log(`Server listening on ${host ?? "0.0.0.0"}:${port}`);
 }
 
 main().catch(error => {
