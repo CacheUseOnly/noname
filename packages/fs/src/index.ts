@@ -29,6 +29,8 @@ export const defaultConfig = {
 	port: 8089,
 	debug: false,
 	dirname: cwd(),
+	/** 只读模式：禁用所有写入/删除接口，用于公网部署 */
+	readonly: false,
 };
 
 function createFsHandler(dirname: string) {
@@ -67,6 +69,12 @@ export default function createApp(config: Partial<typeof defaultConfig> = {}) {
 
 	const { ensureSafe, wrap } = createFsHandler(cfg.dirname);
 
+	// 只读模式下，所有会改动磁盘的接口直接返回403，绝不进入处理函数
+	const wrapWrite = <Q, R>(fn: (query: Q) => Promise<R>) => {
+		if (!cfg.readonly) return wrap(fn);
+		return async (req: any, reply: any) => reply.code(403).send(failedJson(403, "服务器处于只读模式，写入接口已禁用"));
+	};
+
 	app.register(cors, {
 		origin: "*",
 		methods: ["GET", "POST", "OPTIONS"],
@@ -84,7 +92,7 @@ export default function createApp(config: Partial<typeof defaultConfig> = {}) {
 
 	app.get(
 		"/createDir",
-		wrap(async ({ dir }: { dir: string }) => {
+		wrapWrite(async ({ dir }: { dir: string }) => {
 			const full = ensureSafe(dir);
 			await fs.mkdir(full, { recursive: true });
 			return true;
@@ -93,7 +101,7 @@ export default function createApp(config: Partial<typeof defaultConfig> = {}) {
 
 	app.get(
 		"/removeDir",
-		wrap(async ({ dir }: { dir: string }) => {
+		wrapWrite(async ({ dir }: { dir: string }) => {
 			const full = ensureSafe(dir);
 			const stat = await fs.stat(full);
 			if (!stat.isDirectory()) throw new Error(`${full} 不是文件夹`);
@@ -122,9 +130,10 @@ export default function createApp(config: Partial<typeof defaultConfig> = {}) {
 	app.post(
 		"/writeFile",
 		{
-			bodyLimit: 10 * 1024 * 1024 * 1024,
+			// 只读模式下把body上限压到最小，避免有人往内存里灌数据
+			bodyLimit: cfg.readonly ? 1024 : 10 * 1024 * 1024 * 1024,
 		},
-		wrap(async ({ path: p, data }: { path: string; data: number[] }) => {
+		wrapWrite(async ({ path: p, data }: { path: string; data: number[] }) => {
 			const full = ensureSafe(p);
 			await fs.mkdir(path.dirname(full), { recursive: true });
 			await fs.writeFile(full, Buffer.from(data));
@@ -134,7 +143,7 @@ export default function createApp(config: Partial<typeof defaultConfig> = {}) {
 
 	app.get(
 		"/removeFile",
-		wrap(async ({ fileName }: { fileName: string }) => {
+		wrapWrite(async ({ fileName }: { fileName: string }) => {
 			const full = ensureSafe(fileName);
 			const stat = await fs.stat(full);
 			if (stat.isDirectory()) throw new Error("不能删除文件夹");
