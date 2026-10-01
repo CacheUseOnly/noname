@@ -1,5 +1,9 @@
 {
-	"exclude": ["dist", "output", "node_modules"],
+	// 必须用 **/ 前缀：不带的话只排除根目录下的，packages/*/dist 和
+	// packages/*/node_modules 仍会被卷进编译范围。后果是 packages/jit 的
+	// dts 构建会把 packages/fs/dist/*.d.ts 当成待编译文件，而 fs 的 tsup
+	// 配了 clean:true，并行构建时正好把它删掉 → 随机 TS6053
+	"exclude": ["**/dist", "**/dist-types", "**/output", "**/node_modules"],
 	"compilerOptions": {
 		"target": "ESNext",
 		"module": "ESNext",

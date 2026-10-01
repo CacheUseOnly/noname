@@ -157,9 +157,11 @@ sudo systemctl start noname-web
 ## 部署
 
 ```bash
-./deploy/deploy.sh            # 改代码（lint + 编译 + 同步，约 50 秒）
-./deploy/deploy.sh --full     # 新增了武将图/语音/扩展素材时
+./deploy/deploy.sh
 ```
+
+代码和素材一律同步，没有 `--full` 开关：实测没有改动时 audio 只要 2.6 秒、
+image+extension+docs 6.4 秒，而漏同步素材的代价是新文件线上 404，很难察觉。
 
 **不要用 `pnpm build` 部署。** 它开头是 `rm -rf dist`，会把线上站点删掉三四分钟；
 那 4 分钟里有 95% 是在重拷根本没变的 1.2G 素材（纯代码编译只要 13 秒）。
@@ -173,6 +175,10 @@ sudo systemctl start noname-web
 - 朋友浏览器里的 `.js` 可能还是旧的（Cloudflare 把 browser TTL 改写成 4 小时），
   让他们 `Ctrl+Shift+R`；嫌麻烦就把 Dashboard → Caching → Browser Cache TTL
   设成 **Respect Existing Headers**，源站发 `max-age=0`，改完即时生效
+- **新素材刚上线还是 404？** Cloudflare 会把 404 缓存约 3 分钟。如果在文件存在前
+  请求过它（比如你先点了语音再部署），就会命中这个负缓存（`cf-cache-status: HIT`）。
+  等 3 分钟或 purge 对应 URL。先确认源站没问题：
+  `curl -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8089/<路径>`
 
 ## 临时下线
 

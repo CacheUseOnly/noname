@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# 增量部署。默认只重建并同步代码（约 50 秒）；加 --full 连素材一起同步。
+# 增量部署：编译 + 同步代码和素材到 dist/，站点全程可用（约 1 分钟）。
 #
 # 刻意不走 `pnpm build`：那个脚本开头是 rm -rf dist，会让线上站点空几分钟，
-# 而且每次都重拷 1.2G 的 audio/image。这里用 rsync 增量覆盖，站点全程可用。
+# 而且每次无条件重拷 1.2G 素材。这里全部用 rsync 增量覆盖。
+#
+# 素材一律同步，不做 --full 开关：实测没有改动时 audio 只要 2.6 秒、
+# image+extension+docs 6.4 秒，而漏同步的代价是新素材线上 404，很难察觉。
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
@@ -25,8 +28,7 @@ for bin in pnpm node rsync; do
 done
 [ -f apps/core/package.json ] || { echo "不在仓库根目录？当前：$PWD" >&2; exit 1; }
 
-FULL=0
-[ "${1:-}" = "--full" ] && FULL=1
+[ "${1:-}" = "--full" ] && echo "（--full 已不需要，素材现在总是同步）"
 
 STEP="pnpm lint"
 echo "▶ $STEP"
@@ -40,15 +42,13 @@ STEP="同步代码到 dist/"
 echo "▶ $STEP"
 rsync -a apps/core/dist/ dist/
 
-if [ $FULL = 1 ]; then
-    STEP="同步素材"
-    echo "▶ $STEP（新增武将图/语音时才需要）"
-    rsync -a apps/core/audio/     dist/audio/
-    rsync -a apps/core/image/     dist/image/
-    rsync -a apps/core/extension/ dist/extension/
-    rsync -a docs/                dist/docs/
-    cp .nomedia LICENSE README.md dist/
-fi
+STEP="同步素材到 dist/"
+echo "▶ $STEP"
+rsync -a apps/core/audio/     dist/audio/
+rsync -a apps/core/image/     dist/image/
+rsync -a apps/core/extension/ dist/extension/
+rsync -a docs/                dist/docs/
+cp .nomedia LICENSE README.md dist/
 
 # 自检失败不该吞掉，但后面的提示仍然要打出来
 STEP="自检"
@@ -71,6 +71,10 @@ cat <<'EOF'
 朋友浏览器里的 .js 可能还是旧的（Cloudflare 把 browser TTL 改写成了 4 小时）：
   让他们 Ctrl+Shift+R，或在 Dashboard 把 Browser Cache TTL 设成
   Respect Existing Headers（源站发 max-age=0，改完即时生效）
+
+新素材刚上线却还是 404？Cloudflare 会把 404 缓存约 3 分钟（cf-cache-status: HIT）。
+等 3 分钟，或 Dashboard 里 purge 对应 URL。先确认源站没问题：
+  curl -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8089/<路径>
 ────────────────────────────────────────────────────────
 EOF
 
