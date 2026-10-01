@@ -125,15 +125,56 @@ curl -sI https://noname.cacheuseonly.fun/image/character/ahuinan.jpg | grep -i c
 
 **房主关标签页房间就没了** —— 游戏逻辑跑在房主浏览器里，服务器只是中继。
 
-## 日常维护
+## 日常开发
 
-更新代码后：
+### 快速迭代（改代码时用这个）
 
 ```bash
-pnpm build && sudo systemctl restart noname-web
+sudo systemctl stop noname-web     # 必须先停，dev 服务器也要占 8089
+pnpm dev                            # vite 在 8081，热更新，不用 build
 ```
 
-临时下线：
+**必须先停 `noname-web`**：`pnpm dev` 会起一个 `@noname/fs`，默认端口同样是 8089。
+不停的话那个进程起不来，而 vite 的 proxy 还是会把 `/readFile` 打到线上那个只读服务上
+——文件根指向 `dist/` 而不是 `apps/core/`，表现就是"改了代码没反应"。
+
+调完恢复：
+
+```bash
+sudo systemctl start noname-web
+```
+
+### 检查能不能编译
+
+| 命令 | 耗时 | 查什么 |
+|---|---|---|
+| `pnpm lint` | ~8s | eslint，CI 的 lint-check 跑的就是这个 |
+| `pnpm -F noname... build` | ~13s | 真正的编译，语法/import 错误都会暴露 |
+| `pnpm build` | ~4min | 完整包。**只在要换素材时用**，见下 |
+
+本仓库没有独立的 typecheck，CI 也只跑 lint 和 build。前两条跑通基本就没问题。
+
+## 部署
+
+```bash
+./deploy/deploy.sh            # 改代码（lint + 编译 + 同步，约 50 秒）
+./deploy/deploy.sh --full     # 新增了武将图/语音/扩展素材时
+```
+
+**不要用 `pnpm build` 部署。** 它开头是 `rm -rf dist`，会把线上站点删掉三四分钟；
+那 4 分钟里有 95% 是在重拷根本没变的 1.2G 素材（纯代码编译只要 13 秒）。
+`deploy.sh` 用 rsync 增量覆盖，站点全程可用。
+
+部署后：
+
+- **静态站不用重启** —— `@fastify/static` 每次请求现读磁盘
+- 改了 `packages/fs` → `sudo systemctl restart noname-web`
+- 改了 `packages/server` → `pnpm -F @noname/server build && sudo systemctl restart noname-hall`
+- 朋友浏览器里的 `.js` 可能还是旧的（Cloudflare 把 browser TTL 改写成 4 小时），
+  让他们 `Ctrl+Shift+R`；嫌麻烦就把 Dashboard → Caching → Browser Cache TTL
+  设成 **Respect Existing Headers**，源站发 `max-age=0`，改完即时生效
+
+## 临时下线
 
 ```bash
 sudo systemctl stop noname-web noname-hall cloudflared-noname
