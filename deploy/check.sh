@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # 部署后自检
 DOMAIN=noname.cacheuseonly.fun
+FAILED=0
 pass(){ printf '  \033[32m✓\033[0m %s\n' "$1"; }
-fail(){ printf '  \033[31m✗\033[0m %s\n' "$1"; }
+fail(){ printf '  \033[31m✗\033[0m %s\n' "$1"; FAILED=1; }
 
 echo "本机监听（两个都应是 127.0.0.1）"
 ss -tlnp 2>/dev/null | grep -E '8082|8089' || fail "服务没起来"
@@ -42,3 +43,11 @@ c=$(curl -s --http1.1 --max-time 10 -o /dev/null -w '%{http_code}' \
 echo
 echo "dist 里的大厅地址"
 grep -ro 'wss://[a-z0-9./-]*' dist/noname/library/index.js 2>/dev/null | head -1 || fail "没找到，是不是忘了 pnpm build？"
+
+echo
+if [ $FAILED = 0 ]; then
+  printf '\033[32m全部通过\033[0m\n'
+else
+  printf '\033[31m有检查未通过（见上面的 ✗）\033[0m\n'
+fi
+exit $FAILED
