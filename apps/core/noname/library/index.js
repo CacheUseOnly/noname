@@ -14986,6 +14986,47 @@ export class Library {
 		"感受我的痛苦！", // 27
 		"你是怕了我么？", // 28
 		"留下来陪陪我啊", // 29
+		"Nerf this!", // 30 D.Va
+		"Meteor strike!", // 31 末日铁拳
+		"Come on, bleed for me!", // 32 渣客女王
+		"Cage fight!", // 33 毛加
+		"This ends now!", // 34 奥丽莎
+		"Suffer, as I have.", // 35 拉玛刹
+		"Hammer DOWN!", // 36 莱因哈特
+		"Whole hog!", // 37 路霸
+		"What is that melody?", // 38 西格玛
+		"Primal rage!", // 39 温斯顿
+		"Minefield deployed!", // 40 破坏球
+		"Огонь по готовности!", // 41 查莉娅
+		"B.O.B., do something!", // 42 艾什
+		"Beep boop!", // 43 堡垒
+		"It's high noon.", // 44 卡西迪
+		"Duplicating!", // 45 回声
+		"竜神の剣を喰らえ！", // 46 源氏
+		"竜が我が敵を喰らう！", // 47 半藏
+		"Fire in the hole!", // 48 狂鼠
+		"冻住，不许走！", // 49 小美
+		"Justice rains from above!", // 50 法老之鹰
+		"Die, die, die!", // 51 死神
+		"Overclocking!", // 52 索杰恩
+		"I've got you in my sights.", // 53 士兵：76
+		"Apagando las luces!", // 54 黑影
+		"Reality bends to my will!", // 55 秩序之光
+		"Molten core!", // 56 托比昂
+		"Bombs away!", // 57 猎空
+		"Tectonic shock!", // 58 探奇
+		"Personne n'échappe à mon regard.", // 59 黑百合
+		"Nano boost administered.", // 60 安娜
+		"Amplification matrix activated!", // 61 巴蒂斯特
+		"Rally to me!", // 62 布丽吉塔
+		"Captive sun!", // 63 伊拉锐
+		"Orbital ray incoming!", // 64 朱诺
+		"Kitsune, lend me your power!", // 65 雾子
+		"Tree of life!", // 66 生命之梭
+		"Vamos esculachar!", // 67 卢西奥
+		"Helden sterben nicht!", // 68 天使
+		"Surrender to my will!", // 69 莫伊拉
+		"Experience tranquility.", // 70 禅雅塔
 	];
 	InitFilter = {
 		noZhuHp: "不享受主公的额外体力上限",
