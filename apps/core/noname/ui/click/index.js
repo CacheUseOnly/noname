@@ -1199,41 +1199,52 @@ export class Click {
 		if (get.is.phoneLayout()) {
 			list3.style.height = "110px";
 		} else {
-			list3.style.height = "150px";
+			list3.style.height = "220px";
 		}
 		list3.style.overflow = "scroll";
 		lib.setScroll(list3);
-		for (var i = 0; i < lib.quickVoice.length; i++) {
-			var node = ui.create.div(".text.chat", function () {
-				var player = game.me;
-				var str = this.innerHTML;
-				if (!player) {
-					if (game.connectPlayers) {
-						if (game.online) {
-							for (var i = 0; i < game.connectPlayers.length; i++) {
-								if (game.connectPlayers[i].playerid == game.onlineID) {
-									player = game.connectPlayers[i];
-									break;
-								}
+		const sendQuickVoice = function () {
+			var player = game.me;
+			var str = this.innerHTML;
+			if (!player) {
+				if (game.connectPlayers) {
+					if (game.online) {
+						for (var i = 0; i < game.connectPlayers.length; i++) {
+							if (game.connectPlayers[i].playerid == game.onlineID) {
+								player = game.connectPlayers[i];
+								break;
 							}
-						} else {
-							player = game.connectPlayers[0];
 						}
+					} else {
+						player = game.connectPlayers[0];
 					}
 				}
-				if (!player) {
-					return;
-				}
-				if (game.online) {
-					game.send("chat", game.onlineID, str);
-				} else {
-					player.chat(str);
-				}
-			});
-			node.innerHTML = lib.quickVoice[i];
-			list3.appendChild(node);
+			}
+			if (!player) {
+				return;
+			}
+			if (game.online) {
+				game.send("chat", game.onlineID, str);
+			} else {
+				player.chat(str);
+			}
+		};
+		// 按 lib.quickVoiceGroups 分段显示，每段一个标题、若干可换行的"气泡"；
+		// 没有分组信息时退化为单段
+		const voiceGroups = Array.isArray(lib.quickVoiceGroups) && lib.quickVoiceGroups.length ? lib.quickVoiceGroups : [{ name: "", start: 0 }];
+		for (let g = 0; g < voiceGroups.length; g++) {
+			const start = voiceGroups[g].start;
+			const end = g + 1 < voiceGroups.length ? voiceGroups[g + 1].start : lib.quickVoice.length;
+			if (voiceGroups[g].name) {
+				list3.appendChild(ui.create.div(".text.center.quickvoice-group", voiceGroups[g].name));
+			}
+			for (let i = start; i < end; i++) {
+				const node = ui.create.div(".text.chat.quickvoice", sendQuickVoice);
+				node.innerHTML = lib.quickVoice[i];
+				list3.appendChild(node);
+			}
 		}
-		list3.scrollTop = list1.scrollHeight;
+		list3.scrollTop = 0;
 		return uiintro;
 	}
 	volumn() {

@@ -15028,6 +15028,16 @@ export class Library {
 		"Surrender to my will!", // 69 莫伊拉
 		"Experience tranquility.", // 70 禅雅塔
 	];
+	/**
+	 * quickVoice 的分组。start 为该组第一条在 quickVoice 中的下标，
+	 * 聊天面板的快捷语音按此分段显示；追加新语音时记得同步这里。
+	 */
+	quickVoiceGroups = [
+		{ name: "经典", start: 0 },
+		{ name: "守望先锋 · 重装", start: 30 },
+		{ name: "守望先锋 · 输出", start: 42 },
+		{ name: "守望先锋 · 支援", start: 60 },
+	];
 	InitFilter = {
 		noZhuHp: "不享受主公的额外体力上限",
 		noZhuSkill: "不享受地主的额外技能",
