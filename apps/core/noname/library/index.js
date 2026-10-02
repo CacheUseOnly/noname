@@ -14986,6 +14986,59 @@ export class Library {
 		"感受我的痛苦！", // 27
 		"你是怕了我么？", // 28
 		"留下来陪陪我啊", // 29
+		"Nerf this!", // 30 D.Va
+		"Meteor strike!", // 31 末日铁拳
+		"Tear it down!", // 32 骇灾
+		"Time for the Reckoning!", // 33 渣客女王
+		"Come on, stay a while!", // 34 毛加
+		"Meet your fate!", // 35 奥丽莎
+		"Suffer, as I have.", // 36 拉玛刹
+		"Hammer DOWN!", // 37 莱因哈特
+		"Whole hog!", // 38 路霸
+		"What is that melody?", // 39 西格玛
+		"Primal rage!", // 40 温斯顿
+		"Minefield deployed!", // 41 破坏球
+		"Огонь по готовности!", // 42 查莉娅
+		"B.O.B., do something!", // 43 艾什
+		"Beep boop!", // 44 堡垒
+		"It's high noon.", // 45 卡西迪
+		"I'm better than you at...", // 46 回声
+		"竜神の剣を喰らえ！", // 47 源氏
+		"竜が我が敵を喰らう！", // 48 半藏
+		"Fire in the hole!", // 49 狂鼠
+		"冻住，不许走！", // 50 小美
+		"Justice rains from above!", // 51 法老之鹰
+		"Die, die, die!", // 52 死神
+		"This ends now!", // 53 索杰恩
+		"I've got you in my sights.", // 54 士兵：76
+		"Apagando las luces!", // 55 黑影
+		"Reality bends to my will!", // 56 秩序之光
+		"Molten core!", // 57 托比昂
+		"Bomb's tickin'!", // 58 猎空
+		"Excavation initiation!", // 59 探奇
+		"Personne n'échappe à mon regard.", // 60 黑百合
+		"Nano boost administered.", // 61 安娜
+		"Light them up!", // 62 巴蒂斯特
+		"Rally to me!", // 63 布丽吉塔
+		"Face the sunrise!", // 64 伊拉锐
+		"Welcome to orbit!", // 65 朱诺
+		"狐の鉤爪を解き放て！", // 66 雾子
+		"Life protects life!", // 67 生命之梭
+		"Vamos esculachar!", // 68 卢西奥
+		"Helden sterben nicht!", // 69 天使
+		"Surrender to my will!", // 70 莫伊拉
+		"力挽狂澜！", // 71 吴阳
+		"Experience tranquility.", // 72 禅雅塔
+	];
+	/**
+	 * quickVoice 的分组。start 为该组第一条在 quickVoice 中的下标，
+	 * 聊天面板的快捷语音按此分段显示；追加新语音时记得同步这里。
+	 */
+	quickVoiceGroups = [
+		{ name: "经典", start: 0 },
+		{ name: "守望先锋 · 重装", start: 30 },
+		{ name: "守望先锋 · 输出", start: 43 },
+		{ name: "守望先锋 · 支援", start: 61 },
 	];
 	InitFilter = {
 		noZhuHp: "不享受主公的额外体力上限",
