@@ -6670,7 +6670,7 @@ export class Library {
 			connect: {
 				connect_guozhan_mode: {
 					name: "游戏模式",
-					init: "normal",
+					init: "old",
 					item: {
 						normal: "势备",
 						yingbian: "应变",
@@ -6726,7 +6726,7 @@ export class Library {
 				},
 				connect_junzhu: {
 					name: "替换君主",
-					init: true,
+					init: false,
 					// frequent:true,
 					restart: true,
 					intro: "若开启此选项，玩家的第一个回合开始时，若其主武将牌有对应的君主武将牌且场上没有同势力的君主，则其可以将此武将牌替换为对应的君主武将牌，然后重新调整体力上限。若玩家的体力上限因此增大，则玩家回复等量的体力。",
@@ -6739,7 +6739,7 @@ export class Library {
 				},
 				connect_change_card: {
 					name: "启用手气卡",
-					init: false,
+					init: true,
 					frequent: true,
 					restart: true,
 				},
