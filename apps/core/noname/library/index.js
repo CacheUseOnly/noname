@@ -13060,14 +13060,9 @@ export class Library {
 								var result = document.execCommand("paste");
 								input.blur();
 								ui.window.removeChild(input);
+								// 读不到剪贴板（网页版常见）时不再弹窗询问是否手动输入邀请链接
 								if (result || input.value.length > 0) {
 									read(input.value);
-								} else if (confirm("是否输入邀请链接以加入房间？")) {
-									game.prompt("请输入邀请链接", text => {
-										if (typeof text === "string" && text.length > 0) {
-											read(text);
-										}
-									});
 								}
 							}
 						}
