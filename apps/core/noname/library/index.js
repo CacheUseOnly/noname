@@ -6670,7 +6670,7 @@ export class Library {
 			connect: {
 				connect_guozhan_mode: {
 					name: "游戏模式",
-					init: "normal",
+					init: "old",
 					item: {
 						normal: "势备",
 						yingbian: "应变",
@@ -6726,7 +6726,7 @@ export class Library {
 				},
 				connect_junzhu: {
 					name: "替换君主",
-					init: true,
+					init: false,
 					// frequent:true,
 					restart: true,
 					intro: "若开启此选项，玩家的第一个回合开始时，若其主武将牌有对应的君主武将牌且场上没有同势力的君主，则其可以将此武将牌替换为对应的君主武将牌，然后重新调整体力上限。若玩家的体力上限因此增大，则玩家回复等量的体力。",
@@ -6739,7 +6739,7 @@ export class Library {
 				},
 				connect_change_card: {
 					name: "启用手气卡",
-					init: false,
+					init: true,
 					frequent: true,
 					restart: true,
 				},
@@ -13060,14 +13060,9 @@ export class Library {
 								var result = document.execCommand("paste");
 								input.blur();
 								ui.window.removeChild(input);
+								// 读不到剪贴板（网页版常见）时不再弹窗询问是否手动输入邀请链接
 								if (result || input.value.length > 0) {
 									read(input.value);
-								} else if (confirm("是否输入邀请链接以加入房间？")) {
-									game.prompt("请输入邀请链接", text => {
-										if (typeof text === "string" && text.length > 0) {
-											read(text);
-										}
-									});
 								}
 							}
 						}

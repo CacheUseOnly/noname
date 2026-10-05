@@ -153,12 +153,11 @@ export default () => {
 					220
 				);
 				if (get.config("read_clipboard", "connect")) {
-					var ced = false;
 					var read = text => {
 						try {
 							var text2 = text.split("\n")[2];
 							var ip = text2.slice(5);
-							if (ip.length > 0 && text2.startsWith("联机地址:") && (ced || confirm("是否根据剪贴板的邀请链接以进入联机地址和房间？"))) {
+							if (ip.length > 0 && text2.startsWith("联机地址:") && confirm("是否根据剪贴板的邀请链接以进入联机地址和房间？")) {
 								node.innerHTML = ip;
 								event.textnode.innerHTML = "正在连接...";
 								clearTimeout(event.timeout);
@@ -189,15 +188,9 @@ export default () => {
 						var result = document.execCommand("paste");
 						input.blur();
 						ui.window.removeChild(input);
+						// 读不到剪贴板（网页版常见）时不再弹窗询问是否手动输入邀请链接
 						if (result || input.value.length > 0) {
 							read(input.value);
-						} else if (confirm("是否输入邀请链接以进入联机地址和房间？")) {
-							ced = true;
-							game.prompt("请输入邀请链接", text => {
-								if (typeof text === "string" && text.length > 0) {
-									read(text);
-								}
-							});
 						}
 					}
 				}
