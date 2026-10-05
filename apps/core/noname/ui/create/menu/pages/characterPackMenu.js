@@ -33,7 +33,14 @@ export const characterPackMenu = function (connectMenu) {
 			rightPane.appendChild(this.link);
 		}
 	};
+	/** 联机建房时，随所选模式显示/隐藏“国战武将”页（见文件末尾），非联机菜单下不会被赋值 */
+	let syncGuozhanPage;
+	/** 联机建房时，单独开启/关闭一个国战武将（见文件末尾） */
+	let toggleGuozhanCharacter;
 	setUpdateActive(function (node) {
+		if (syncGuozhanPage) {
+			syncGuozhanPage();
+		}
 		if (!node) {
 			node = start.firstChild.querySelector(".active");
 			if (!node) {
@@ -229,6 +236,11 @@ export const characterPackMenu = function (connectMenu) {
 			var banCharacter = function (e) {
 				if (_status.clicked) {
 					_status.clicked = false;
+					return;
+				}
+				// 联机建房时，点击“国战武将”页里的武将，单独开启/关闭该武将
+				if (connectMenu && mode == "mode_guozhan") {
+					toggleGuozhanCharacter?.(this);
 					return;
 				}
 				if (mode.startsWith("mode_") && !mode.startsWith("mode_extension_") && mode != "mode_favourite" && mode != "mode_banned") {
@@ -492,6 +504,226 @@ export const characterPackMenu = function (connectMenu) {
 	}
 
 	updateNodes();
+
+	if (connectMenu && lib.mode.guozhan) {
+		/**
+		 * 联机建房菜单的“武将”页只列出联机武将包，列不出国战专属的 mode_guozhan 武将池。
+		 * 所以选中国战模式时，按需引入国战数据，补上与单机一致的“国战武将”页，
+		 * 分类开关保存在 connect_guozhan_banned，开房后由国战选将读取。
+		 */
+		let guozhanNode = null;
+		let guozhanLoading = false;
+
+		const getSelectedMode = () => cacheMenux.pages[0]?.firstChild?.querySelector(".active")?.mode;
+
+		const loadGuozhanPack = async () => {
+			const mode = await game.loadModeAsync("guozhan");
+			const pack = mode.characterPack.mode_guozhan;
+			lib.characterPack.mode_guozhan = pack;
+			lib.characterSort.mode_guozhan = mode.characterSort.mode_guozhan;
+			lib.translate.mode_guozhan_character_config = mode.translate.mode_guozhan_character_config;
+			for (const sort in mode.characterSort.mode_guozhan) {
+				lib.translate[sort] = mode.translate[sort];
+			}
+			// 页面按钮需要 lib.character 里有对应武将；译名与国战开局时一致，缺失时沿用标准武将的
+			for (const name in pack) {
+				lib.character[name] ??= pack[name];
+				lib.translate[name] ??= mode.translate[name] ?? lib.translate[name.slice(3)];
+			}
+		};
+
+		/**
+		 * 头像路径的解析依赖 get.mode() 为国战（会把 gz_xxx 换成 xxx），联机大厅里不满足，
+		 * 没有国战皮肤的武将会找不到 gz_xxx.jpg，所以这里按国战开局时的规则重设一次
+		 *
+		 * @param { HTMLElement } page
+		 */
+		const fixGuozhanPortraits = page => {
+			const useSkin = lib.config.mode_config?.guozhan?.guozhanSkin ?? true;
+			for (const button of page.querySelectorAll(".button.character")) {
+				const name = button.link;
+				button.setBackground(useSkin && lib.character[name]?.hasSkinInGuozhan ? name : name.slice(3), "character");
+			}
+		};
+
+		/**
+		 * “仅国战标准”按钮的预设：以国战标准系列为基础，再增减个别武将
+		 *
+		 * 想调整这份预设，改这里即可（武将填国战武将名，即带 gz_ 前缀的名字）。
+		 */
+		const GUOZHAN_STANDARD_PRESET = {
+			/** 开启的分类：国战标准、君临天下·阵/势/变（不含·权） */
+			sorts: ["guozhan_default", "guozhan_zhen", "guozhan_shi", "guozhan_bian"],
+			/** 额外开启的武将：法正、张绣（君临天下·权），鲁芝、界吕布、马云騄（他山之石），蒋干（十周年专属） */
+			enable: ["gz_fazheng", "gz_zhangxiu", "gz_luzhi", "gz_re_lvbu", "gz_mayunlu", "gz_jianggan"],
+			/** 额外关闭的武将：左慈（君临天下·变） */
+			disable: ["gz_zuoci"],
+		};
+
+		/**
+		 * 按 connect_guozhan_banned 刷新页面：武将的禁用样式，以及每个分类开关（分类里的武将全部可用才显示为开启）
+		 *
+		 * @param { HTMLElement } page
+		 */
+		const syncGuozhanState = page => {
+			const sorts = lib.characterSort.mode_guozhan;
+			const banned = lib.config.connect_guozhan_banned;
+			for (const toggle of page.querySelectorAll(".config.toggle")) {
+				const sort = toggle._link?.config?._name;
+				if (sort in sorts) {
+					toggle.classList.toggle(
+						"on",
+						sorts[sort].every(name => !banned.includes(name))
+					);
+				}
+			}
+			for (const child of page.childNodes) {
+				child.updateBanned?.();
+			}
+		};
+
+		/**
+		 * 按分类批量设置国战武将的禁用状态，并保存（只改数据，界面由调用方刷新）
+		 *
+		 * @param { (sort: string) => boolean } isOn - 每个分类是否开启
+		 * @param { { enable?: string[], disable?: string[] } } [extra] - 在分类的基础上，额外开启/关闭的武将
+		 */
+		const applyGuozhanSelection = (isOn, { enable = [], disable = [] } = {}) => {
+			const sorts = lib.characterSort.mode_guozhan;
+			const banned = lib.config.connect_guozhan_banned;
+			// 个别武将同时被列在多个分类里（如界太史慈），所以先禁后开，保证开启的分类里的武将一定可用
+			for (const sort in sorts) {
+				if (!isOn(sort)) {
+					banned.addArray(sorts[sort]);
+				}
+			}
+			for (const sort in sorts) {
+				if (isOn(sort)) {
+					banned.removeArray(sorts[sort]);
+				}
+			}
+			banned.removeArray(enable);
+			banned.addArray(disable);
+			game.saveConfig("connect_guozhan_banned", banned);
+		};
+
+		const applyGuozhanStandardPreset = () => applyGuozhanSelection(sort => GUOZHAN_STANDARD_PRESET.sorts.includes(sort), GUOZHAN_STANDARD_PRESET);
+
+		/**
+		 * 第一次使用时（从没保存过国战武将设置），默认套用“仅国战标准”；
+		 * 之后不再自动套用，哪怕用户把它改成了“全部开启”
+		 */
+		const initGuozhanDefault = () => {
+			if (lib.config.connect_guozhan_banned_inited) {
+				return;
+			}
+			game.saveConfig("connect_guozhan_banned_inited", true);
+			if (lib.config.connect_guozhan_banned.length == 0) {
+				applyGuozhanStandardPreset();
+			}
+		};
+
+		/**
+		 * 在“国战武将”页顶部加一排一键按钮，批量开启/关闭分类，并提示可以单独点武将开关
+		 *
+		 * @param { HTMLElement } page
+		 */
+		const addGuozhanBulkButtons = page => {
+			/**
+			 * @param { (sort: string) => boolean } isOn - 每个分类是否开启
+			 * @param { { enable?: string[], disable?: string[] } } [extra] - 在分类的基础上，额外开启/关闭的武将
+			 */
+			const apply = (isOn, extra) => {
+				applyGuozhanSelection(isOn, extra);
+				syncGuozhanState(page);
+			};
+
+			const bar = ui.create.div();
+			bar.style.cssText = "position:relative;display:flex;flex-wrap:wrap;gap:6px;clear:both;padding:4px 0 4px 4px;";
+			page.insertBefore(bar, page.firstChild);
+			ui.create.div(".menubutton.pointerdiv", "全部开启", bar, () => apply(() => true));
+			ui.create.div(".menubutton.pointerdiv", "全部关闭", bar, () => apply(() => false));
+			ui.create.div(".menubutton.pointerdiv", "仅国战标准", bar, () => apply(sort => GUOZHAN_STANDARD_PRESET.sorts.includes(sort), GUOZHAN_STANDARD_PRESET));
+			for (const button of bar.childNodes) {
+				button.style.cssText = "position:static;flex:none;margin:0;width:auto;height:auto;padding:3px 8px;font-size:14px;line-height:20px;white-space:nowrap;";
+			}
+
+			const hint = ui.create.div();
+			hint.style.cssText = "clear:both;padding:0 0 6px 6px;font-size:12px;opacity:0.7;";
+			hint.innerHTML = "点击武将可单独开启/关闭";
+			page.insertBefore(hint, bar.nextSibling);
+		};
+
+		/**
+		 * @param { HTMLElement } page
+		 */
+		const decorateGuozhanPage = page => {
+			fixGuozhanPortraits(page);
+			addGuozhanBulkButtons(page);
+			syncGuozhanState(page);
+		};
+
+		toggleGuozhanCharacter = button => {
+			const banned = lib.config.connect_guozhan_banned;
+			const name = button.link;
+			if (banned.includes(name)) {
+				banned.remove(name);
+			} else {
+				banned.add(name);
+			}
+			game.saveConfig("connect_guozhan_banned", banned);
+			if (guozhanNode?.link) {
+				syncGuozhanState(guozhanNode.link);
+			}
+		};
+
+		syncGuozhanPage = function () {
+			const isGuozhan = getSelectedMode() == "guozhan";
+			if (guozhanNode) {
+				guozhanNode.style.display = isGuozhan ? "" : "none";
+				if (!isGuozhan && guozhanNode.classList.contains("active")) {
+					const next = [...start.firstChild.children].find(node => node.mode && node !== guozhanNode && node.style.display != "none");
+					if (next) {
+						clickMode.call(next);
+					}
+				}
+				return;
+			}
+			if (!isGuozhan || guozhanLoading) {
+				return;
+			}
+			guozhanLoading = true;
+			loadGuozhanPack()
+				.then(() => {
+					initGuozhanDefault();
+					guozhanNode = createModeConfig("mode_guozhan", start.firstChild, start.firstChild.firstChild);
+					if (guozhanNode.link) {
+						decorateGuozhanPage(guozhanNode.link);
+					} else {
+						const initLink = guozhanNode._initLink;
+						guozhanNode._initLink = function () {
+							initLink.call(this);
+							decorateGuozhanPage(this.link);
+						};
+					}
+					syncGuozhanPage();
+				})
+				.catch(e => {
+					console.error("联机建房：加载国战武将页失败", e);
+				})
+				.finally(() => {
+					guozhanLoading = false;
+				});
+		};
+		syncGuozhanPage();
+		// updateActive 是全局回调，联机时会被另一个菜单覆盖，所以直接监听“模式”列表的点击来同步
+		const modeList = cacheMenux.pages[0]?.firstChild;
+		if (modeList) {
+			for (const type of ["click", "touchend"]) {
+				modeList.addEventListener(type, () => syncGuozhanPage());
+			}
+		}
+	}
 
 	/**
 	 * 在菜单栏初始化完成后，如果又加载了武将包，进行刷新
