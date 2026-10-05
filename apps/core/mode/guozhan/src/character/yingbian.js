@@ -1,9 +1,15 @@
 import { lib, game, ui, get, ai, _status } from "noname";
 const Character = lib.element.Character;
 
-const bool = _status.connectMode ? lib.configOL.jinEx : get.config("jinEx");
+/**
+ * 文德武备开关：晋势力的部分武将有 OL（开启）和线下（关闭）两个版本。
+ *
+ * 这个开关是房间配置，而本文件在模块首次加载时就会执行：房主开房时房间配置还没生效，
+ * 提前加载（如建房菜单里预览国战武将）也会把值固定住，所以版本必须在读取时才决定。
+ */
+const getJinEx = () => (_status.connectMode ? lib.configOL.jinEx : get.config("jinEx"));
 
-export default {
+const pack = {
 	gz_jun_jin_simayi: new Character({
 		sex: "male",
 		group: "jin",
@@ -125,14 +131,14 @@ export default {
 		group: "jin",
 		hp: 3,
 		maxHp: 3,
-		skills: bool ? ["fakeyanxi", "fakeshiren"] : ["gz_yanxi", "gz_shiren"],
+		skills: ["gz_yanxi", "gz_shiren"],
 	}),
 	gz_jin_simazhao: new Character({
 		sex: "male",
 		group: "jin",
 		hp: 3,
 		maxHp: 3,
-		skills: bool ? ["zhaoran", "gzchoufa"] : ["gz_zhaoran", "gz_beiluan"],
+		skills: ["gz_zhaoran", "gz_beiluan"],
 	}),
 	gz_jin_xiahouhui: new Character({
 		sex: "female",
@@ -144,51 +150,51 @@ export default {
 	gz_jin_simashi: new Character({
 		sex: "male",
 		group: "jin",
-		hp: bool ? 5 : 4,
-		maxHp: bool ? 5 : 4,
-		skills: bool ? ["gzyimie", "gztairan"] : ["gz_yimie", "gz_ruilve"],
+		hp: 4,
+		maxHp: 4,
+		skills: ["gz_yimie", "gz_ruilve"],
 	}),
 	gz_duyu: new Character({
 		sex: "male",
 		group: "jin",
 		hp: 4,
 		maxHp: 4,
-		skills: bool ? ["gzsanchen", "gzpozhu"] : ["gz_sanchen", "gz_pozhu"],
+		skills: ["gz_sanchen", "gz_pozhu"],
 	}),
 	gz_zhanghuyuechen: new Character({
 		sex: "male",
 		group: "jin",
 		hp: 4,
 		maxHp: 4,
-		skills: bool ? ["fakexijue"] : ["gz_xijue", "gz_lvxian", "gz_yingwei"],
+		skills: ["gz_xijue", "gz_lvxian", "gz_yingwei"],
 	}),
 	gz_jin_yanghuiyu: new Character({
 		sex: "female",
 		group: "jin",
 		hp: 3,
 		maxHp: 3,
-		skills: bool ? ["fakeciwei", "fakehuirong"] : ["gz_ciwei", "gz_caiyuan"],
+		skills: ["gz_ciwei", "gz_caiyuan"],
 	}),
 	gz_simazhou: new Character({
 		sex: "male",
 		group: "jin",
 		hp: 4,
 		maxHp: 4,
-		skills: bool ? ["caiwang", "gznaxiang"] : ["gz_pojing"],
+		skills: ["gz_pojing"],
 	}),
 	gz_shibao: new Character({
 		sex: "male",
 		group: "jin",
 		hp: 4,
 		maxHp: 4,
-		skills: bool ? ["gzzhuosheng"] : ["gz_zhuosheng"],
+		skills: ["gz_zhuosheng"],
 	}),
 	gz_weiguan: new Character({
 		sex: "male",
 		group: "jin",
 		hp: 3,
 		maxHp: 3,
-		skills: bool ? ["zhongyun", "shenpin"] : ["gz_chengxi", "gz_jiantong"],
+		skills: ["gz_chengxi", "gz_jiantong"],
 	}),
 	gz_zhongyan: new Character({
 		sex: "female",
@@ -237,14 +243,14 @@ export default {
 		group: "jin",
 		hp: 3,
 		maxHp: 3,
-		skills: bool ? ["fakexiongshu", "fakejianhui"] : ["gz_chujue", "gz_jianzhi"],
+		skills: ["gz_chujue", "gz_jianzhi"],
 	}),
 	gz_jin_yanghu: new Character({
 		sex: "male",
 		group: "jin",
 		hp: 4,
 		maxHp: 4,
-		skills: bool ? ["fakechongxin", "fakeweirong"] : ["gz_huaiyuan", "gz_fushou"],
+		skills: ["gz_huaiyuan", "gz_fushou"],
 	}),
 	gz_sp_duyu: new Character({
 		sex: "male",
@@ -283,3 +289,43 @@ export default {
 		skills: ["zhengnan", "xiefang"],
 	}),
 };
+
+/**
+ * 文德武备开启时（OL 版）覆盖的属性，上面的武将数据本身是关闭时（线下版）的
+ *
+ * @type {Record<string, { skills?: string[], hp?: number, maxHp?: number }>}
+ */
+const jinExOverrides = {
+	gz_jin_wangyuanji: { skills: ["fakeyanxi", "fakeshiren"] },
+	gz_jin_simazhao: { skills: ["zhaoran", "gzchoufa"] },
+	gz_jin_simashi: { skills: ["gzyimie", "gztairan"], hp: 5, maxHp: 5 },
+	gz_duyu: { skills: ["gzsanchen", "gzpozhu"] },
+	gz_zhanghuyuechen: { skills: ["fakexijue"] },
+	gz_jin_yanghuiyu: { skills: ["fakeciwei", "fakehuirong"] },
+	gz_simazhou: { skills: ["caiwang", "gznaxiang"] },
+	gz_shibao: { skills: ["gzzhuosheng"] },
+	gz_weiguan: { skills: ["zhongyun", "shenpin"] },
+	gz_jin_jiachong: { skills: ["fakexiongshu", "fakejianhui"] },
+	gz_jin_yanghu: { skills: ["fakechongxin", "fakeweirong"] },
+};
+
+for (const [name, overrides] of Object.entries(jinExOverrides)) {
+	const character = pack[name];
+	for (const key of /** @type {const} */ (["skills", "hp", "maxHp"])) {
+		if (overrides[key] === undefined) {
+			continue;
+		}
+		const offValue = character[key];
+		Object.defineProperty(character, key, {
+			get: () => (getJinEx() ? overrides[key] : offValue),
+			// 若有地方改写这个属性，就以改写的值为准
+			set(value) {
+				Object.defineProperty(character, key, { value, writable: true, enumerable: true, configurable: true });
+			},
+			enumerable: true,
+			configurable: true,
+		});
+	}
+}
+
+export default pack;
