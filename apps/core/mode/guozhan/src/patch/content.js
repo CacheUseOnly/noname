@@ -569,6 +569,35 @@ export const chooseCharacterContent = async (event, _trigger, _player) => {
 };
 
 /**
+ * 联机国战中，返回国战武将不能出现在选将池里的原因；可以选用则返回 null
+ *
+ * - 单机国战的禁将（lib.config.guozhan_banned）
+ * - 房主在建房菜单里的禁将（lib.configOL.banned）：“国战武将”页保存的是国战武将名；
+ *   标准武将页里点开“国战模式”开关保存的是标准武将名（如 caocao），所以把 gz_caocao 视为它的国战版本一并禁用
+ * - 其他：isUnseen 的武将（如十常侍变身后的 gz_scs_*）等，与单机选将保持一致
+ *
+ * @param {string} character - 国战武将名
+ * @returns {string | null}
+ */
+const getExcludedReason = character => {
+	if (lib.config.guozhan_banned?.includes(character)) {
+		return "单机国战禁将";
+	}
+	/** @type {string[]} */
+	const banned = lib.configOL.banned ?? [];
+	if (banned.includes(character)) {
+		return "“国战武将”页禁用";
+	}
+	if (character.startsWith("gz_") && banned.includes(character.slice(3))) {
+		return "标准武将页的“国战模式”禁用";
+	}
+	if (lib.filter.characterDisabled(character)) {
+		return "其他（如十常侍衍生武将）";
+	}
+	return null;
+};
+
+/**
  * @param {GameEvent} event
  * @param {GameEvent} _trigger
  * @param {Player} _player
@@ -584,9 +613,26 @@ export const chooseCharacterOLContent = async (event, _trigger, _player) => {
 
 	/** @type {Record<string, Character>} */
 	const pack = Reflect.get(lib.characterPack, "mode_guozhan");
-	const characterList = Object.keys(pack).filter(character => {
-		return !character.startsWith("gz_shibing") && !get.is.jun(character) && !lib.config.guozhan_banned?.includes(character);
-	});
+	const isSelectable = character => !character.startsWith("gz_shibing") && !get.is.jun(character);
+	let characterList = Object.keys(pack).filter(character => isSelectable(character) && !getExcludedReason(character));
+	// 禁用设置把可选武将限制得太少时，每人发不出 5 个候选，房间会卡死；此时忽略禁用设置，并提示房主
+	const minimum = lib.configOL.number * 5;
+	if (characterList.length < minimum) {
+		const count = characterList.length;
+		/** @type {Record<string, number>} */
+		const reasons = {};
+		for (const character of Object.keys(pack)) {
+			const reason = isSelectable(character) && getExcludedReason(character);
+			if (reason) {
+				reasons[reason] = (reasons[reason] ?? 0) + 1;
+			}
+		}
+		const detail = Object.entries(reasons)
+			.map(([reason, number]) => `${reason} ${number} 个`)
+			.join("、");
+		characterList = Object.keys(pack).filter(character => isSelectable(character) && !lib.character[character]?.isUnseen);
+		alert(`房间设置后可选的国战武将只有 ${count} 个，${lib.configOL.number} 人局至少需要 ${minimum} 个，本局已忽略武将禁用设置。\n被排除的原因：${detail}`);
+	}
 	Reflect.set(_status, "characterlist", characterList.slice(0));
 	Reflect.set(_status, "yeidentity", []);
 
