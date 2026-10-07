@@ -6724,6 +6724,17 @@ export class Library {
 					// frequent:true,
 					intro: "主将和副将都明置后，若为特定组合，可获得【珠联璧合】标记",
 				},
+				connect_changeViceType: {
+					name: "副将变更方式",
+					init: "online",
+					item: {
+						default: "发现式",
+						online: "随机式",
+					},
+					frequent: true,
+					restart: true,
+					intro: "<li>发现式：变更副将时，从剩余武将中发现三张同势力的武将牌，选择其中一张。<br><li>随机式：变更副将时，从剩余武将中随机变更为一张，且不再限制同一个技能的变更次数。",
+				},
 				connect_junzhu: {
 					name: "替换君主",
 					init: false,
