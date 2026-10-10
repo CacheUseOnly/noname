@@ -1,5 +1,12 @@
 import { lib, game, ui, get, ai, _status } from "noname";
 
+/**
+ * 副将变更方式是否为“随机式”（联机时读取房间设置，单机时读取本地设置）
+ *
+ * @returns { boolean }
+ */
+const isRandomChangeVice = () => (_status.connectMode ? lib.configOL.changeViceType : get.config("changeViceType")) == "online";
+
 export class PlayerGuozhan extends lib.element.Player {
 	/**
 	 * @type {string}
@@ -122,7 +129,7 @@ export class PlayerGuozhan extends lib.element.Player {
 			// @ts-expect-error 类型就是这么写的
 			next.player = this;
 			next.skill = skill;
-			if (repeat || (!_status.connectMode && get.config("changeViceType") == "online")) {
+			if (repeat || isRandomChangeVice()) {
 				// @ts-expect-error 类型就是这么写的
 				next.repeat = true;
 			}
@@ -528,7 +535,7 @@ export class PlayerGuozhan extends lib.element.Player {
 		next.player = this;
 		// @ts-expect-error 类型就是这么写的
 		next.setContent("changeVice");
-		next.num = !_status.connectMode && get.config("changeViceType") == "online" ? 1 : 3;
+		next.num = isRandomChangeVice() ? 1 : 3;
 		if (hidden) {
 			// @ts-expect-error 类型就是这么写的
 			next.hidden = true;
