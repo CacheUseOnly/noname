@@ -23,7 +23,8 @@ export default {
 			if (result.control !== "cancel2") {
 				event.result = {
 					bool: true,
-					cost_data: result.index,
+					// content 里按选项文字判断，这里要存文字而不是序号
+					cost_data: result.control,
 				};
 			}
 		},

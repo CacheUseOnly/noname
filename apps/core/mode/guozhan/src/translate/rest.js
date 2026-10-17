@@ -616,7 +616,7 @@ export default {
 	gz_ol_wangrong: "王荣",
 	gz_re_lvbu_prefix: "界",
 	gzfengpo: "凤魄",
-	gzfengpo_info: "当你每回合首次使用【杀】或【决斗】指定唯一目标后，你可以选择一项：1.摸X张牌；2.摸一张牌（X为其♦手牌数）。",
+	gzfengpo_info: "当你每回合首次使用【杀】或【决斗】指定唯一目标后，你可以选择一项：1.摸X张牌；2.令此牌的伤害值基数+X（X为其♦手牌数）。",
 
 	guozhan_jun: "君主武将",
 	guozhan_jin: "文德武备",
