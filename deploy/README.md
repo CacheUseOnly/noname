@@ -198,5 +198,7 @@ sudo systemctl stop noname-web noname-hall cloudflared-noname
 | `apps/core/mode/guozhan/src/patch/player.js` | 联机国战的变更副将读取房间的“副将变更方式”设置（发现式 / 随机式），此前联机时写死为发现式 |
 | `apps/core/mode/guozhan/src/patch/content.js` | 联机国战选将池遵守房间的武将禁用设置，并排除十常侍变身后的衍生武将；可选武将过少（每人不足 5 个候选）时忽略禁用设置并提示房主，避免房间卡死 |
 | `apps/core/mode/guozhan/src/character/yingbian.js` | 「文德武备」晋势力武将的版本改为读取时才按房间设置决定，修复房主与访客看到不同版本 |
+| `apps/core/mode/guozhan/src/character/normal.js` | 孟获、祝融改为只算蜀势力（上游为蜀/群双势力） |
+| `apps/core/mode/guozhan/src/skill/character/normal.js`, `src/translate/skill/character/normal.js` | 太史慈〖酣战〗改为界太史慈的〖酣战〗（官网版：拼点前可令对方用随机手牌拼点，拼点后可获得点数最大的【杀】），直接复用核心的实现 |
 
 前两项向后兼容（不传新参数时行为与上游一致）。后面几项会改变联机界面和联机国战的行为（默认值、选将池、弹窗），不是向后兼容的。`git pull` 遇到冲突时优先保留这些改动。

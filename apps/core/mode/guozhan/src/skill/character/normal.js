@@ -2531,66 +2531,20 @@ export default {
 	// gz_re_taishici
 	gz_hanzhan: {
 		audio: "hanzhan",
-		trigger: {
-			player: ["chooseToCompareAfter", "compareMultipleAfter"],
-			target: ["chooseToCompareAfter", "compareMultipleAfter"],
-		},
-		filter(event, player) {
-			if (event.preserve) {
-				return false;
-			}
-			const list = [event.player, event.target];
-			const targets = list.slice().filter(i => (event.num1 - event.num2) * get.sgn(0.5 - list.indexOf(i)) <= 0);
-			return targets.some(i => {
-				const target = list[1 - list.indexOf(i)];
-				return target.hasCard(card => {
-					return lib.filter.canBeGained(card, i, target);
-				}, "e");
-			});
-		},
-		async cost(event, trigger, player) {
-			let users = [];
-			const list = [trigger.player, trigger.target];
-			let targets = list.slice().filter(i => (trigger.num1 - trigger.num2) * get.sgn(0.5 - list.indexOf(i)) <= 0);
-			targets = targets
-				.filter(i => {
-					const target = list[1 - list.indexOf(i)];
-					return target.hasCard(card => {
-						return lib.filter.canBeGained(card, i, target);
-					}, "e");
-				})
-				.sortBySeat(player);
-			for (const i of targets) {
-				const aim = list[1 - list.indexOf(i)];
-				const { bool } = await i.chooseBool(get.prompt("gz_hanzhan"), "获得" + get.translation(aim) + "装备区的一张牌").set(
-					"choice",
-					aim.hasCard(card => {
-						return get.value(card, aim) * get.attitude(i, aim) < 0;
-					}, "e")
-				).forResult();
-				if (bool) {
-					users.push(i);
-				}
-			}
-			event.result = { bool: Boolean(users.length), targets: users };
-		},
-		logLine: false,
-		async content(event, trigger, player) {
-			const list = [trigger.player, trigger.target];
-			let targets = list.slice().filter(i => (trigger.num1 - trigger.num2) * get.sgn(0.5 - list.indexOf(i)) <= 0);
-			targets = targets
-				.filter(i => {
-					const target = list[1 - list.indexOf(i)];
-					return target.hasCard(card => {
-						return lib.filter.canBeGained(card, i, target);
-					}, "e");
-				})
-				.sortBySeat(player);
-			for (const i of targets) {
-				const aim = list[1 - list.indexOf(i)];
-				i.line(aim, "green");
-				await i.gainPlayerCard(aim, "e", true);
-			}
+		inherit: "hanzhan",
+		group: "gz_hanzhan_gain",
+		subSkill: {
+			gain: {
+				inherit: "hanzhan_gain",
+				sourceSkill: "gz_hanzhan",
+				filter(event, player) {
+					// 拼点被取消（有一方没有手牌）时没有 lose_list，核心的判断会直接抛错并卡住事件队列
+					if (!event.lose_list) {
+						return false;
+					}
+					return lib.skill.hanzhan_gain.filter(event, player);
+				},
+			},
 		},
 	},
 
