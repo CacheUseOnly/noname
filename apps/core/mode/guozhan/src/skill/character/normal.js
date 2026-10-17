@@ -3079,7 +3079,7 @@ export default {
 				filter(event, player) {
 					return (
 						// @ts-expect-error 类型系统未来可期
-						event._gz_kuangfued && !player.hasHistory("sourceDamage", evt => evt.card && event.card) && player.countCards("h") > 0
+						event._gz_kuangfued && !player.hasHistory("sourceDamage", evt => evt.card == event.card) && player.countCards("h") > 0
 					);
 				},
 				async content(event, trigger, player) {
@@ -3247,7 +3247,7 @@ export default {
 							// @ts-expect-error 类型系统未来可期
 							return _status.event.choice;
 						})
-						.set("prompt", "暗置" + get.translation(event.target) + "的一张武将牌")
+						.set("prompt", "暗置" + get.translation(target) + "的一张武将牌")
 						.set("choice", choice)
 						.forResult();
 				}

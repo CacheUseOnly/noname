@@ -188,7 +188,8 @@ export class GameGuozhan extends Game {
 		uiintro.add('<div class="text chat">首亮奖励：' + num);
 		uiintro.add('<div class="text chat">珠联璧合：' + (lib.configOL.zhulian ? "开启" : "关闭"));
 		uiintro.add('<div class="text chat">出牌时限：' + lib.configOL.choose_timeout + "秒");
-		uiintro.add('<div class="text chat">国战牌堆：' + (lib.configOL.guozhanpile ? "开启" : "关闭"));
+		uiintro.add('<div class="text chat">游戏模式：' + ({ normal: "势备", yingbian: "应变", old: "怀旧", free: "自由" }[lib.configOL.guozhan_mode] ?? "势备"));
+		uiintro.add('<div class="text chat">副将变更方式：' + (lib.configOL.changeViceType == "online" ? "随机式" : "发现式"));
 		uiintro.add('<div class="text chat">鏖战模式：' + (lib.configOL.aozhan ? "开启" : "关闭"));
 		last = uiintro.add('<div class="text chat">观看下家副将：' + (lib.configOL.viewnext ? "开启" : "关闭"));
 
