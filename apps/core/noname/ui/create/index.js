@@ -786,7 +786,7 @@ export class Create {
 	chat() {
 		var chat = ui.create.system("聊天", null, true);
 		ui.chatButton = chat;
-		lib.setPopped(chat, ui.click.chat, 220);
+		lib.setPopped(chat, ui.click.chat, get.is.phoneLayout() ? 220 : 380);
 	}
 	exit() {
 		if (!ui.exit) {

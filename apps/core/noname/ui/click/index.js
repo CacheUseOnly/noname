@@ -1019,11 +1019,17 @@ export class Click {
 			e.stopPropagation();
 		});
 
+		// 弹窗顶部离窗口顶 50px、底部留 20px，输入框、标签栏和边距共约 105px，
+		// 剩下的高度分给聊天记录区和下方的表情 / 快捷语音区，窗口较矮时自动收窄，避免超出窗口底部
+		const popupRoom = ui.window.offsetHeight - 50 - 20 - 105;
+		const historyHeight = Math.max(110, Math.min(300, Math.round(popupRoom * 0.55)));
+		const panelHeight = Math.max(110, Math.min(240, popupRoom - historyHeight));
+
 		var list = ui.create.div(".caption");
 		if (get.is.phoneLayout()) {
 			list.style.maxHeight = "110px";
 		} else {
-			list.style.maxHeight = "220px";
+			list.style.maxHeight = historyHeight + "px";
 		}
 		list.style.overflow = "scroll";
 		lib.setScroll(list);
@@ -1108,28 +1114,44 @@ export class Click {
 			list.scrollTop = list.scrollHeight;
 		};
 		uiintro._heightfixed = true;
-		var emotionTitle = ui.create.div(".text.center", "聊天表情", function () {
-			if (emotionTitle.innerHTML == "快捷语音") {
-				emotionTitle.innerHTML = "聊天表情";
-				list2.remove();
-				list3.remove();
-				uiintro.add(list1);
-				while (list2.childNodes.length) {
-					list2.firstChild.remove();
-				}
-			} else {
-				emotionTitle.innerHTML = "快捷语音";
-				list1.remove();
-				list2.remove();
-				uiintro.add(list3);
-			}
+		// 输入框下面两个并排的标签：表情 / 快捷语音。
+		// 在某个表情包里面时，“表情”标签会显示成“表情 › 包名”，点它回到表情包列表；
+		// 在某个语音分类里面时，“快捷语音”标签会显示成“‹ 分类名”，点它回到分类按钮页
+		var tabEmotion = ui.create.div(".chat-tab", "表情", function () {
+			showTab("emotion");
 		});
-		uiintro.add(emotionTitle);
+		var tabVoice = ui.create.div(".chat-tab", "快捷语音", function () {
+			showTab("voice");
+		});
+		tabEmotion.classList.add("active");
+		var tabBar = ui.create.div(".chat-tabs");
+		tabBar.appendChild(tabEmotion);
+		tabBar.appendChild(tabVoice);
+		uiintro.add(tabBar);
+		const showTab = function (name) {
+			tabEmotion.classList.toggle("active", name == "emotion");
+			tabVoice.classList.toggle("active", name == "voice");
+			tabEmotion.innerHTML = "表情";
+			tabVoice.innerHTML = "快捷语音";
+			list1.remove();
+			list2.remove();
+			list3.remove();
+			if (list4) {
+				list4.remove();
+				list4 = null;
+			}
+			while (list2.childNodes.length) {
+				list2.firstChild.remove();
+			}
+			uiintro.add(name == "voice" ? list3 : list1);
+		};
+		// 当前打开的某个语音分类的语音列表（没打开分类时为 null）
+		var list4 = null;
 		var list1 = ui.create.div("");
 		if (get.is.phoneLayout()) {
 			list1.style.height = "110px";
 		} else {
-			list1.style.height = "150px";
+			list1.style.height = panelHeight + "px";
 		}
 		list1.style.overflow = "scroll";
 		lib.setScroll(list1);
@@ -1139,7 +1161,7 @@ export class Click {
 		if (get.is.phoneLayout()) {
 			list2.style.height = "110px";
 		} else {
-			list2.style.height = "150px";
+			list2.style.height = panelHeight + "px";
 		}
 		list2.style.overflow = "scroll";
 		lib.setScroll(list2);
@@ -1183,7 +1205,7 @@ export class Click {
 		const srcBase = `${lib.assetURL}image/emotion/`;
 		for (const folder in _status.emotion_cache) {
 			const emotionPack = ui.create.div(".card.fullskin", `<img src="${srcBase}${folder}/1.gif" width="50" height="50">`, function () {
-				emotionTitle.innerHTML = get.translation(this.pack);
+				tabEmotion.innerHTML = "表情 › " + get.translation(this.pack);
 				createEmotion(this.pack);
 				list1.remove();
 				uiintro.add(list2);
@@ -1199,7 +1221,7 @@ export class Click {
 		if (get.is.phoneLayout()) {
 			list3.style.height = "110px";
 		} else {
-			list3.style.height = "220px";
+			list3.style.height = panelHeight + "px";
 		}
 		list3.style.overflow = "scroll";
 		lib.setScroll(list3);
@@ -1229,19 +1251,67 @@ export class Click {
 				player.chat(str);
 			}
 		};
-		// 按 lib.quickVoiceGroups 分段显示，每段一个标题、若干可换行的"气泡"；
-		// 没有分组信息时退化为单段
+		// 按 lib.quickVoiceGroups 分类。一组的语音 = 从它的 start 到下一组 start 之前的各条
+		// （去掉被别的组 extra 认领走的），加上它自己的 extra。没有分组信息时退化为单个分类
 		const voiceGroups = Array.isArray(lib.quickVoiceGroups) && lib.quickVoiceGroups.length ? lib.quickVoiceGroups : [{ name: "", start: 0 }];
+		const claimedVoices = new Set(voiceGroups.flatMap(group => group.extra || []));
+		const voiceCategories = [];
 		for (let g = 0; g < voiceGroups.length; g++) {
 			const start = voiceGroups[g].start;
 			const end = g + 1 < voiceGroups.length ? voiceGroups[g + 1].start : lib.quickVoice.length;
-			if (voiceGroups[g].name) {
-				list3.appendChild(ui.create.div(".text.center.quickvoice-group", voiceGroups[g].name));
-			}
+			const indexes = [];
 			for (let i = start; i < end; i++) {
+				if (!claimedVoices.has(i)) {
+					indexes.push(i);
+				}
+			}
+			for (const i of voiceGroups[g].extra || []) {
+				if (i >= 0 && i < lib.quickVoice.length) {
+					indexes.push(i);
+				}
+			}
+			if (indexes.length) {
+				indexes.sort((a, b) => a - b);
+				voiceCategories.push({ name: voiceGroups[g].name, indexes });
+			}
+		}
+		// 一个分类的语音：若干可换行的“气泡”，点一下发送
+		const createVoiceList = function (indexes) {
+			const list = ui.create.div(".caption");
+			if (get.is.phoneLayout()) {
+				list.style.height = "110px";
+			} else {
+				list.style.height = panelHeight + "px";
+			}
+			list.style.overflow = "scroll";
+			lib.setScroll(list);
+			for (const i of indexes) {
 				const node = ui.create.div(".text.chat.quickvoice", sendQuickVoice);
 				node.innerHTML = lib.quickVoice[i];
-				list3.appendChild(node);
+				list.appendChild(node);
+			}
+			return list;
+		};
+		if (voiceCategories.length <= 1) {
+			// 没有分类可选，直接列出全部语音
+			for (const category of voiceCategories) {
+				for (const i of category.indexes) {
+					const node = ui.create.div(".text.chat.quickvoice", sendQuickVoice);
+					node.innerHTML = lib.quickVoice[i];
+					list3.appendChild(node);
+				}
+			}
+		} else {
+			// 每个分类一个按钮（名称 + 条数），点进去显示该分类的全部语音
+			for (const category of voiceCategories) {
+				const button = ui.create.div(".text.center.quickvoice-category", function () {
+					list4 = createVoiceList(category.indexes);
+					tabVoice.innerHTML = "‹ " + category.name;
+					list3.remove();
+					uiintro.add(list4);
+				});
+				button.innerHTML = category.name + '<span class="quickvoice-count">' + category.indexes.length + "</span>";
+				list3.appendChild(button);
 			}
 		}
 		list3.scrollTop = 0;

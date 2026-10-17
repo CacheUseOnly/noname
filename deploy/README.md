@@ -195,6 +195,7 @@ sudo systemctl stop noname-web noname-hall cloudflared-noname
 | `apps/core/noname/library/index.js` | `hallURL` 预填大厅地址；联机国战建房默认值改为怀旧牌堆、启用手气卡、关闭替换君主，并新增“副将变更方式”选项（默认随机式）；去掉网页版读不到剪贴板时的“输入邀请链接”询问弹窗 |
 | `apps/core/mode/connect.js` | 同上，去掉进入联机地址前的“输入邀请链接”询问弹窗 |
 | `apps/core/noname/ui/create/menu/pages/characterPackMenu.js` | 联机建房选中国战后，“武将”页新增“国战武将”页：分类开关、点击单个武将开关、“全部开启 / 全部关闭 / 仅国战标准”按钮；首次使用默认套用“仅国战标准”预设（预设清单在文件内 `GUOZHAN_STANDARD_PRESET`） |
+| `apps/core/noname/ui/click/index.js`, `apps/core/noname/ui/create/index.js`, `apps/core/layout/default/layout.css`, `apps/core/noname/library/index.js` | 联机房间的聊天弹窗加大；“表情 / 快捷语音”改为并排标签；快捷语音按分类显示为按钮，点进去看该分类的全部语音；“守望先锋 Misc”里的语音归到对应的英雄分类（语音分组新增可选的 `extra`，音频文件名不变） |
 | `apps/core/mode/guozhan/src/patch/player.js` | 联机国战的变更副将读取房间的“副将变更方式”设置（发现式 / 随机式），此前联机时写死为发现式 |
 | `apps/core/mode/guozhan/src/patch/content.js` | 联机国战选将池遵守房间的武将禁用设置，并排除十常侍变身后的衍生武将；可选武将过少（每人不足 5 个候选）时忽略禁用设置并提示房主，避免房间卡死 |
 | `apps/core/mode/guozhan/src/character/yingbian.js` | 「文德武备」晋势力武将的版本改为读取时才按房间设置决定，修复房主与访客看到不同版本 |
